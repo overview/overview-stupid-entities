@@ -78,6 +78,7 @@ module.exports = class TokenCounter
   # * useful: all tokens, minus dictionary tokens and ignored tokens. This does
   #           _not_ necessary include `included`. (The client should handle
   #           `included` itself.)
+  # * nUseful: _total_ number of useful, non-dictionary tokens.
   snapshot: (nTokens) ->
     counts = @tokens
     tokens = @tokensKeys.sort((t1, t2) -> counts[t2] - counts[t1])
@@ -85,11 +86,13 @@ module.exports = class TokenCounter
     all = {}
     (all[token] = counts[token]) for token in tokens.slice(0, nTokens)
 
+    nUseful = 0
     usefulTokens = []
     for token in tokens
       if @dictionary[token] != true && @ignore[token] != true
-        usefulTokens.push(token)
-        break if usefulTokens.length >= nTokens
+        nUseful += 1
+        if usefulTokens.length < nTokens
+          usefulTokens.push(token)
 
     useful = {}
     (useful[token] = counts[token]) for token in usefulTokens
@@ -100,3 +103,4 @@ module.exports = class TokenCounter
     all: all
     useful: useful
     included: included
+    nUseful: nUseful

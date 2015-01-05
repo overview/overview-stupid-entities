@@ -38,8 +38,6 @@ streamDocuments = (options) ->
   undefined
 
 app.get '/generate', (req, res) ->
-  console.log(req.query)
-
   counter = new TokenCounter
     lang: req.query.lang
     ignore: String(req.query.ignore || '').split(/\s+/)
@@ -94,7 +92,6 @@ app.get '/generate', (req, res) ->
 
     onDone: ->
       writeSnapshot(NTokensInResponse)
-      console.log('All written!')
       res.write(']')
       res.end()
 

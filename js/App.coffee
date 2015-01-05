@@ -2,6 +2,10 @@ $ = require('jquery')
 _ = require('lodash')
 Promise = require('bluebird')
 
+State = require('./models/State')
+VizView = require('./views/VizView')
+ProgressView = require('./views/ProgressView')
+
 Params =
   server: 'a String'
   documentSetId: 'a String'
@@ -13,19 +17,16 @@ module.exports = class App
       throw "Must pass options.#{k}, a #{v}" if !@options[k]
       @[k] = @options[k]
 
-    @_ajax = (options) =>
-      auth = new Buffer(@apiToken + ':x-auth-token').toString('base64')
-
-      options = _.extend({
-        dataType: 'json'
-        headers:
-          Authorization: "Basic #{auth}"
-      }, options)
-      Promise.resolve($.ajax(options))
-
-  $: (args...) -> @$el.find(args...)
+    @state = new State({}, @options)
 
   attach: (el) ->
     @$el = $(el)
-    @$el.text('Hello…')
+
+    @viz = new VizView(model: @state)
+    @progress = new ProgressView(model: @state)
+    @$el.append(@viz.el)
+    @$el.append(@progress.el)
+
+    @state.refresh()
+
     undefined

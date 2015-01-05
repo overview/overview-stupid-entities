@@ -1,5 +1,7 @@
 App = require('./App')
+Backbone = require('backbone')
 $ = require('jquery')
+Backbone.$ = $
 QueryString = require('querystring')
 
 $ ->
