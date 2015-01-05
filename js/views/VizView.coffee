@@ -111,14 +111,13 @@ module.exports = class VizView extends Backbone.View
         .style('top', '3px')
 
   _drawFromLayout: (data) ->
-    texts = @texts.selectAll('text').data(data)
+    texts = @texts.selectAll('text').data(data, (d) -> d[0])
 
     # Modify existing <text> elements
     texts.transition()
       .duration(AnimationDuration)
       .attr('transform', (d) -> "translate(#{d.x},#{d.y}),rotate(#{d.rotate})")
       .style('font-size', (d) -> "#{d.size}px")
-      .text((d) -> d.text)
 
     # Add new <text> elements and animate their opacity
     texts.enter().append('text')
