@@ -37,7 +37,7 @@ module.exports = class VizView extends Backbone.View
 
     @fontSize
       .domain([ minCount, maxCount ])
-      .rangeRound([ Math.round(w / 60), Math.round(w / 15) ])
+      .rangeRound([ Math.round(w / 70), Math.round(w / 20) ])
 
     @texts
       .attr('transform', "translate(#{w >> 1},#{h >> 1})")
@@ -76,6 +76,7 @@ module.exports = class VizView extends Backbone.View
       .duration(AnimationDuration)
       .attr('transform', (d) -> "translate(#{d.x},#{d.y}),rotate(#{d.rotate})")
       .style('font-size', (d) -> "#{d.size}px")
+      .text((d) -> d.text)
 
     # Add new <text> elements and animate their opacity
     texts.enter().append('text')

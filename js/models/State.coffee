@@ -1,6 +1,5 @@
 Backbone = require('backbone')
 oboe = require('oboe')
-_ = require('lodash')
 
 NVisibleTokens = 150
 
@@ -15,6 +14,8 @@ module.exports = class State extends Backbone.Model
     lastServerError: null
     progress: 1
     tokens: [] # Array of [ token, nOccurrences ] Arrays
+    showingIgnore: false  # if true, a textarea covers the screen
+    showingInclude: false # if true, a textarea covers the screen
 
   initialize: (attrs, options) ->
     throw 'Must set options.server, a Server' if !options.server
@@ -25,7 +26,6 @@ module.exports = class State extends Backbone.Model
     #
     # * @config: server config
     # * @ignore: ignored words (Object mapping token -> true)
-    # * @include: included words (Object mapping token -> true)
     # * @oboe: running Oboe request, if there is one
 
     @config =
@@ -34,21 +34,21 @@ module.exports = class State extends Backbone.Model
       apiToken: options.apiToken
 
     @ignore = Object.create(null) # no prototype/constructor
-    @include = Object.create(null) # no prototype/constructor
-
     (@ignore[token] = true) for token in @get('ignore')
-    (@include[token] = true) for token in @get('include')
 
     @oboe = null
+
+    @listenTo(@, 'change:ignore change:include change:lastServerResponse', @_refreshTokens)
 
   _responseToAttributes: (response) ->
     json = response.tokens
 
     keys = Object.keys(json.useful)
-    keys.sort((t1, t2) -> json.useful[t2] - json.useful[t1])
-    keys = keys.slice(0, NVisibleTokens - Object.keys(json.included).length)
-
-    tokens = keys.map((k) -> [ k, json.useful[k] ])
+    tokens = keys
+      .sort((t1, t2) -> json.useful[t2] - json.useful[t1])
+      .filter((k) => !@ignore[k])
+      .slice(0, NVisibleTokens)
+      .map((k) -> [ k, json.useful[k] ])
 
     for k, v of json.included
       tokens.push([ k, v ])
@@ -82,9 +82,7 @@ module.exports = class State extends Backbone.Model
     @oboe = oboe("/generate?server=#{encodeURIComponent(@config.server)}&apiToken=#{encodeURIComponent(@config.apiToken)}&documentSetId=#{encodeURIComponent(@config.documentSetId)}&lang=#{encodeURIComponent(@get('lang'))}&ignore=#{encodeURIComponent(@get('ignore').join(' '))}&include=#{encodeURIComponent(@get('include').join(' '))}")
       .node '![*]', (response) =>
         # Oboe eats up errors. Use process.nextTick to crash properly
-        process.nextTick =>
-          attrs = @_responseToAttributes(response)
-          @set(attrs)
+        process.nextTick(=> @set('lastServerResponse', response))
         oboe.drop
       .done =>
         @oboe = null
@@ -99,13 +97,19 @@ module.exports = class State extends Backbone.Model
         @oboe = null
 
   setIgnore: (ignore) ->
-    @set(ignore: ignore)
     @ignore = Object.create(null) # no prototype/constructor
-    (@ignore[token] = true) for token in @get('ignore')
+    (@ignore[token] = true) for token in ignore
+    @set(ignore: ignore)
     @
 
   setInclude: (include) ->
-    @set(include: include)
     @include = Object.create(null) # no prototype/constructor
     (@include[token] = true) for token in @get('include')
+    @set(include: include)
     @
+
+  _refreshTokens: ->
+    return if !@get('lastServerResponse')
+    attrs = @_responseToAttributes(@get('lastServerResponse'))
+    console.log(attrs.tokens[0])
+    @set(attrs)

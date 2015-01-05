@@ -5,6 +5,7 @@ Promise = require('bluebird')
 State = require('./models/State')
 VizView = require('./views/VizView')
 ProgressView = require('./views/ProgressView')
+IgnoreTokensView = require('./views/IgnoreTokensView')
 
 Params =
   server: 'a String'
@@ -24,8 +25,13 @@ module.exports = class App
 
     @viz = new VizView(model: @state)
     @progress = new ProgressView(model: @state)
+    @ignore = new IgnoreTokensView(model: @state)
     @$el.append(@viz.el)
     @$el.append(@progress.el)
+    @$el.append(@ignore.el)
+
+    @progress.render()
+    @ignore.render()
 
     @state.refresh()
 
