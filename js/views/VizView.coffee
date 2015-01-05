@@ -10,6 +10,9 @@ AnimationDuration = 500 # ms
 module.exports = class VizView extends Backbone.View
   className: 'd3-container'
 
+  events:
+    'click button.ignore-token': 'onClickIgnore'
+
   initialize: ->
     throw 'Must pass options.model, a State' if !@model?
 
@@ -17,6 +20,7 @@ module.exports = class VizView extends Backbone.View
 
   render: ->
     @initialRender() if !@svg?
+    @delete?.remove()
 
     w = @el.parentNode.clientWidth || 100
     h = @el.parentNode.clientHeight || 100
@@ -53,6 +57,8 @@ module.exports = class VizView extends Backbone.View
     @background = @svg.append('g').attr('class', 'background')
     @texts = @svg.append('g').attr('class', 'tokens')
 
+    @texts.on 'click', => @_onClickText(d3.event.target)
+
     @fontSize = d3.scale.linear()
       .domain([ 1, 2 ])
       .rangeRound([ 1, 2 ])
@@ -67,6 +73,42 @@ module.exports = class VizView extends Backbone.View
       .on('end', @_drawFromLayout.bind(@))
 
     @
+
+  _onClickText: (el) ->
+    text = d3.select(el)
+    token = text.data()[0]
+
+    matrixStack = []
+    node = el
+    while node != @svg.node()
+      matrixStack.push(node.transform.baseVal.consolidate().matrix)
+      node = node.parentNode
+
+    m = matrixStack.pop()
+    while matrixStack.length
+      m = m.multiply(matrixStack.pop())
+
+    cssTransform = "matrix(#{m.a},#{m.b},#{m.c},#{m.d},#{m.e},#{m.f})"
+
+    @delete?.remove()
+    @delete = d3.select(@el).append('div')
+      .attr('class', 'ignore-token')
+      .style('position', 'absolute')
+      .style('white-space', 'nowrap')
+      .style('top', 0)
+      .style('left', 0)
+      .style('width', 0)
+      .style('height', 0)
+      .style('transform', cssTransform)
+      .append('button')
+        .attr('data-token', token[0])
+        .attr('class', 'ignore-token')
+        .style('position', 'relative')
+        .text('Ignore this word')
+        .style('text-align', 'center')
+        .style('width', '9em')
+        .style('left', '-4.5em')
+        .style('top', '3px')
 
   _drawFromLayout: (data) ->
     texts = @texts.selectAll('text').data(data)
@@ -83,6 +125,7 @@ module.exports = class VizView extends Backbone.View
       .text((d) -> d.text)
       .attr('text-anchor', 'middle')
       .attr('transform', (d) -> "translate(#{d.x},#{d.y}),rotate(#{d.rotate})")
+      .attr('draggable', 'yes')
       .style('font-family', (d) -> d.font)
       .style('font-size', (d) -> "#{d.size}px")
       .style('fill', '#666')
@@ -104,3 +147,7 @@ module.exports = class VizView extends Backbone.View
       .duration(AnimationDuration)
       .style('opacity', 1e-6)
       .remove()
+
+  onClickIgnore: (el) ->
+    token = Backbone.$(el.currentTarget).attr('data-token')
+    @model.addIgnore(token)

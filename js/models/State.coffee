@@ -102,6 +102,13 @@ module.exports = class State extends Backbone.Model
     @set(ignore: ignore)
     @
 
+  addIgnore: (token) ->
+    @ignore[token] = true
+    newIgnore = @get('ignore').slice(0)
+    newIgnore.push(token)
+    @set(ignore: newIgnore)
+    @
+
   setInclude: (include) ->
     @include = Object.create(null) # no prototype/constructor
     (@include[token] = true) for token in @get('include')
@@ -111,5 +118,4 @@ module.exports = class State extends Backbone.Model
   _refreshTokens: ->
     return if !@get('lastServerResponse')
     attrs = @_responseToAttributes(@get('lastServerResponse'))
-    console.log(attrs.tokens[0])
     @set(attrs)
