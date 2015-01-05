@@ -21,6 +21,7 @@ module.exports = class VizView extends Backbone.View
   render: ->
     @initialRender() if !@svg?
     @delete?.remove()
+    @delete = null
 
     w = @el.parentNode.clientWidth || 100
     h = @el.parentNode.clientHeight || 100
@@ -54,10 +55,9 @@ module.exports = class VizView extends Backbone.View
 
   initialRender: ->
     @svg = d3.select(@el).append('svg')
-    @background = @svg.append('g').attr('class', 'background')
     @texts = @svg.append('g').attr('class', 'tokens')
 
-    @texts.on 'click', => @_onClickText(d3.event.target)
+    @svg.on 'click', => @_onClickSvg(d3.event.target)
 
     @fontSize = d3.scale.linear()
       .domain([ 1, 2 ])
@@ -73,6 +73,16 @@ module.exports = class VizView extends Backbone.View
       .on('end', @_drawFromLayout.bind(@))
 
     @
+
+  _onClickSvg: (el) ->
+    if el.nodeName == 'text'
+      @_onClickText(el)
+    else
+      @_onUnclick()
+
+  _onUnclick: ->
+    @delete?.remove()
+    @delete = null
 
   _onClickText: (el) ->
     text = d3.select(el)
@@ -100,15 +110,16 @@ module.exports = class VizView extends Backbone.View
       .style('width', 0)
       .style('height', 0)
       .style('transform', cssTransform)
-      .append('button')
-        .attr('data-token', token[0])
-        .attr('class', 'ignore-token')
-        .style('position', 'relative')
-        .text('Ignore this word')
-        .style('text-align', 'center')
-        .style('width', '9em')
-        .style('left', '-4.5em')
-        .style('top', '3px')
+
+    @delete.append('button')
+      .attr('data-token', token[0])
+      .attr('class', 'ignore-token')
+      .style('position', 'relative')
+      .text('Ignore this word')
+      .style('text-align', 'center')
+      .style('width', '9em')
+      .style('left', '-4.5em')
+      .style('top', '3px')
 
   _drawFromLayout: (data) ->
     texts = @texts.selectAll('text').data(data, (d) -> d[0])
