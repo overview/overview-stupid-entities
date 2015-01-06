@@ -1,4 +1,5 @@
 express = require('express')
+compression = require('compression')
 morgan = require('morgan')
 stream = require('stream')
 oboe = require('oboe')
@@ -9,6 +10,7 @@ NTokensInResponse = 3000 # Number of tokens to send when request completes
 HeartbeatInterval = 1000 # Minimum number of milliseconds between heartbeats
 
 app = express()
+app.use(compression())
 app.use(morgan('combined'))
 
 streamDocuments = (options) ->
