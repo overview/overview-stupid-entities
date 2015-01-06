@@ -127,6 +127,7 @@ module.exports = class VizView extends Backbone.View
     # Modify existing <text> elements
     texts.transition()
       .duration(AnimationDuration)
+      .style('opacity', 1) # in case we interrupted an earlier transition
       .attr('transform', (d) -> "translate(#{d.x},#{d.y}),rotate(#{d.rotate})")
       .style('font-size', (d) -> "#{d.size}px")
 
