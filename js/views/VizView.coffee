@@ -13,8 +13,11 @@ module.exports = class VizView extends Backbone.View
   events:
     'click button.ignore-token': 'onClickIgnore'
 
-  initialize: ->
+  initialize: (options) ->
     throw 'Must pass options.model, a State' if !@model?
+    throw 'Must pass options.server, a String' if !options.server?
+
+    @server = options.server
 
     @listenTo(@model, 'change:tokens', @render)
 
@@ -84,6 +87,11 @@ module.exports = class VizView extends Backbone.View
     @delete?.remove()
     @delete = null
 
+    window.parent.postMessage({
+      call: 'setDocumentListParams'
+      args: [ { name: "in document set" } ]
+    }, @server)
+
   _onClickText: (el) ->
     text = d3.select(el)
     token = text.data()[0]
@@ -120,6 +128,21 @@ module.exports = class VizView extends Backbone.View
       .style('width', '9em')
       .style('left', '-4.5em')
       .style('top', '3px')
+
+    @delete.append('div')
+      .attr('class', 'count')
+      .style('position', 'relative')
+      .text("(appears #{token[1]} times)")
+      .style('text-align', 'center')
+      .style('width', '10em')
+      .style('left', '-5em')
+      .style('top', '3px')
+      .style('text-shadow', '0 0 8px whitesmoke, 0 0 8px whitesmoke, 0 0 8px whitesmoke, 0 0 8px whitesmoke, 0 0 8px whitesmoke, 0 0 8px whitesmoke, 0 0 8px whitesmoke')
+
+    window.parent.postMessage({
+      call: 'setDocumentListParams'
+      args: [ { q: token[0], name: "with word “#{token[0]}”" } ]
+    }, @server)
 
   _drawFromLayout: (data) ->
     texts = @texts.selectAll('text').data(data, (d) -> d[0])

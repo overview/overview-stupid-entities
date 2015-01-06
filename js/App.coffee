@@ -23,7 +23,7 @@ module.exports = class App
   attach: (el) ->
     @$el = $(el)
 
-    @viz = new VizView(model: @state)
+    @viz = new VizView(model: @state, server: @server)
     @progress = new ProgressView(model: @state)
     @ignore = new IgnoreTokensView(model: @state)
     @$el.append(@viz.el)
