@@ -19,7 +19,10 @@ module.exports = class VizView extends Backbone.View
 
     @server = options.server
 
-    @listenTo(@model, 'change:ignore change:serverResponse', @render)
+    @_renderCallback = @render.bind(@)
+
+    @listenTo(@model, 'change:ignore change:serverResponse', @_renderCallback)
+    window.addEventListener('resize', @_renderCallback, false)
 
   render: ->
     @initialRender() if !@svg?
@@ -45,7 +48,7 @@ module.exports = class VizView extends Backbone.View
 
     @fontSize
       .domain([ minCount, maxCount ])
-      .rangeRound([ Math.round(w / 100), Math.round(w / 12) ])
+      .rangeRound([ Math.round(w / 90), Math.round(w / 12) ])
 
     @texts
       .attr('transform', "translate(#{w >> 1},#{h >> 1})")
@@ -191,3 +194,7 @@ module.exports = class VizView extends Backbone.View
   onClickIgnore: (el) ->
     token = Backbone.$(el.currentTarget).attr('data-token')
     @model.addIgnore(token)
+
+  remove: ->
+    super()
+    window.removeEventListener(@_renderCallback)
