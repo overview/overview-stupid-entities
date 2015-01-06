@@ -4,8 +4,8 @@ stream = require('stream')
 oboe = require('oboe')
 
 TokenCounter = require('./lib/TokenCounter')
-NTokensInHeartbeat = 150 # Number of tokens to send every so often while processing
-NTokensInResponse = 1000 # Number of tokens to send when request completes
+NTokensInHeartbeat = 200 # Number of tokens to send every so often while processing
+NTokensInResponse = 3000 # Number of tokens to send when request completes
 HeartbeatInterval = 1000 # Minimum number of milliseconds between heartbeats
 
 app = express()
