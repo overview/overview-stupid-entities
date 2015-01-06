@@ -7,6 +7,8 @@ VizView = require('./views/VizView')
 ProgressView = require('./views/ProgressView')
 IgnoreTokensView = require('./views/IgnoreTokensView')
 
+MaxSaveDelay = 1000 # never save state more than once per MaxSaveDelay ms
+
 Params =
   server: 'a String'
   documentSetId: 'a String'
@@ -19,6 +21,11 @@ module.exports = class App
       @[k] = @options[k]
 
     @state = new State({}, @options)
+    @state.fetch
+      success: (state) ->
+        saveCallback = _.throttle((-> state.save()), MaxSaveDelay, leading: false)
+        state.on('change:ignore change:lang', saveCallback)
+        state.refresh()
 
   attach: (el) ->
     @$el = $(el)
@@ -26,13 +33,12 @@ module.exports = class App
     @viz = new VizView(model: @state, server: @server)
     @progress = new ProgressView(model: @state)
     @ignore = new IgnoreTokensView(model: @state)
+
     @$el.append(@viz.el)
     @$el.append(@progress.el)
     @$el.append(@ignore.el)
 
     @progress.render()
     @ignore.render()
-
-    @state.refresh()
 
     undefined

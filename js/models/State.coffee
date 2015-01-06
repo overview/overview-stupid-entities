@@ -1,5 +1,6 @@
 Backbone = require('backbone')
 oboe = require('oboe')
+_ = require('lodash')
 
 NVisibleTokens = 500
 
@@ -20,7 +21,6 @@ module.exports = class State extends Backbone.Model
     # "Private" members:
     #
     # * @config: server config
-    # * @ignore: ignored words (Object mapping token -> true)
     # * @oboe: running Oboe request, if there is one
 
     @config =
@@ -28,10 +28,16 @@ module.exports = class State extends Backbone.Model
       documentSetId: options.documentSetId
       apiToken: options.apiToken
 
-    @ignore = Object.create(null) # no prototype/constructor
-    (@ignore[token] = true) for token in @get('ignore')
-
     @oboe = null
+
+  # URL of our persisted properties
+  url: -> "#{@config.server}/api/v1/store/state"
+  isNew: -> false
+  toJSON: -> _.pick(@attributes, 'lang', 'ignore')
+
+  parse: (json) ->
+    lang: json.lang || 'en+ru'
+    ignore: json.ignore || []
 
   # Returns an Array of { text, count } objects.
   #
@@ -41,11 +47,14 @@ module.exports = class State extends Backbone.Model
     response = @get('serverResponse')
     return [] if !response
 
+    ignore = Object.create(null) # no prototype/constructor
+    (ignore[token] = true) for token in @get('ignore')
+
     counts = response.counts
 
     ret = []
     for token in response.useful
-      continue if @ignore[token]
+      continue if ignore[token]
       break if ret.length >= NVisibleTokens
       ret.push(text: token, count: counts[token])
 
@@ -82,14 +91,16 @@ module.exports = class State extends Backbone.Model
         @oboe = null
 
   setIgnore: (ignore) ->
-    @ignore = Object.create(null) # no prototype/constructor
-    (@ignore[token] = true) for token in ignore
     @set(ignore: ignore)
-    @
 
   addIgnore: (token) ->
-    @ignore[token] = true
     newIgnore = @get('ignore').slice(0)
     newIgnore.push(token)
     @set(ignore: newIgnore)
-    @
+
+  sync: (method, model, options) ->
+    newOptions = _.extend({
+      beforeSend: (xhr) =>
+        xhr.setRequestHeader('Authorization', "Basic #{new Buffer("" + @config.apiToken + ":x-auth-token").toString('base64')}")
+    }, options)
+    super(method, model, newOptions)
