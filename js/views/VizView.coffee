@@ -137,7 +137,9 @@ module.exports = class VizView extends Backbone.View
       .style('width', '10em')
       .style('left', '-5em')
       .style('top', '3px')
-      .style('text-shadow', '0 0 8px whitesmoke, 0 0 8px whitesmoke, 0 0 8px whitesmoke, 0 0 8px whitesmoke, 0 0 8px whitesmoke, 0 0 8px whitesmoke, 0 0 8px whitesmoke')
+      .style('text-shadow',
+        'white -1px -1px, white -1px 1px, white 1px -1px, white 1px 1px, -1px 0 1px white, 1px 0 1px white, 0 -1px 1px white, 0 1px 1px white'
+      )
 
     window.parent.postMessage({
       call: 'setDocumentListParams'
