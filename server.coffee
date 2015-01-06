@@ -41,7 +41,6 @@ app.get '/generate', (req, res) ->
   counter = new TokenCounter
     lang: req.query.lang
     ignore: String(req.query.ignore || '').split(/\s+/)
-    include: String(req.query.include || '').split(/\s+/)
 
   processed = 0
   total = null
@@ -56,9 +55,10 @@ app.get '/generate', (req, res) ->
     else
       0
 
-    tokens = counter.snapshot(nTokens)
+    snapshot = counter.snapshot(nTokens)
+    snapshot.progress = progress
 
-    json = JSON.stringify(progress: progress, tokens: tokens)
+    json = JSON.stringify(snapshot)
     res.write(json)
 
   streamDocuments

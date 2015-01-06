@@ -19,7 +19,7 @@ module.exports = class VizView extends Backbone.View
 
     @server = options.server
 
-    @listenTo(@model, 'change:tokens', @render)
+    @listenTo(@model, 'change:ignore change:serverResponse', @render)
 
   render: ->
     @initialRender() if !@svg?
@@ -29,12 +29,12 @@ module.exports = class VizView extends Backbone.View
     w = @el.parentNode.clientWidth || 100
     h = @el.parentNode.clientHeight || 100
     size = [ w, h ]
-    tokens = @model.get('tokens')
+    tokens = @model.getTokens()
 
     minCount = Infinity
     maxCount = 0
     for token in tokens
-      count = token[1]
+      count = token.count
       minCount = count if count < minCount
       maxCount = count if count > maxCount
 
@@ -45,7 +45,7 @@ module.exports = class VizView extends Backbone.View
 
     @fontSize
       .domain([ minCount, maxCount ])
-      .rangeRound([ Math.round(w / 70), Math.round(w / 20) ])
+      .rangeRound([ Math.round(w / 100), Math.round(w / 12) ])
 
     @texts
       .attr('transform', "translate(#{w >> 1},#{h >> 1})")
@@ -70,8 +70,8 @@ module.exports = class VizView extends Backbone.View
       .timeInterval(100)
       .padding(2)
       .font('Helvetica, Arial, sans-serif')
-      .fontSize((d) => @fontSize(d[1])) # each datum is [ token, count ]
-      .text((d) -> d[0])                # each datum is [ token, count ]
+      .fontSize((d) => @fontSize(d.count))
+      .text((d) -> d.text)
       .rotate(-> (Math.random() - 0.5) * 60) # -30 .. +30
       .on('end', @_drawFromLayout.bind(@))
 
@@ -120,7 +120,7 @@ module.exports = class VizView extends Backbone.View
       .style('transform', cssTransform)
 
     @delete.append('button')
-      .attr('data-token', token[0])
+      .attr('data-token', token.text)
       .attr('class', 'ignore-token')
       .style('position', 'relative')
       .text('Ignore this word')
@@ -129,10 +129,14 @@ module.exports = class VizView extends Backbone.View
       .style('left', '-4.5em')
       .style('top', '3px')
 
+    countText = switch token.count
+      when 1 then '(appears 1 time)'
+      else "(appears #{token.count} times)"
+
     @delete.append('div')
+      .text(countText)
       .attr('class', 'count')
       .style('position', 'relative')
-      .text("(appears #{token[1]} times)")
       .style('text-align', 'center')
       .style('width', '10em')
       .style('left', '-5em')
@@ -143,11 +147,11 @@ module.exports = class VizView extends Backbone.View
 
     window.parent.postMessage({
       call: 'setDocumentListParams'
-      args: [ { q: token[0], name: "with word “#{token[0]}”" } ]
+      args: [ { q: token.text, name: "with word “#{token.text}”" } ]
     }, @server)
 
   _drawFromLayout: (data) ->
-    texts = @texts.selectAll('text').data(data, (d) -> d[0])
+    texts = @texts.selectAll('text').data(data, (d) -> d.text)
 
     # Modify existing <text> elements
     texts.transition()

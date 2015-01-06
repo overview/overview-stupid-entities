@@ -47,8 +47,6 @@ findTokenOffsets.regex.study(PCRE.PCRE_STUDY_JIT_COMPILE)
 module.exports = class TokenCounter
   constructor: (options) ->
     throw 'Must pass options.lang, a String like "en" or "en+ru"' if !options.lang
-    throw 'Must pass options.ignore, an Array of Strings' if !options.ignore
-    throw 'Must pass options.include, an Array of Strings' if !options.include
 
     @dictionary = combineDictionaries(options.lang)
 
@@ -56,12 +54,6 @@ module.exports = class TokenCounter
     # `{}`, so that we don't have a prototype. That's how we can handle the
     # English tokens "prototype" and "constructor", which would otherwise wreak
     # havoc.
-    @ignore = Object.create(null)
-    for token in options.ignore
-      @ignore[token] = true
-
-    @include = options.include
-
     @tokens = Object.create(null)
     @tokensKeys = [] # Optimization: Object.keys() is slow
 
@@ -83,39 +75,25 @@ module.exports = class TokenCounter
 
   # Produces a snapshot of the tokens, suitable for transfer over the wire.
   #
-  # A snapshot consists of three JSON Objects. Each maps tokens to their
-  # frequencies:
+  # A snapshot is a JSON object that includes these:
   #
-  # * included: all tokens in the `included` Array.
-  # * all: the top `nTokens` tokens and their counts. This can help the client
-  #        include new tokens without refreshing the page, as long as they are
-  #        fairly common.
-  # * useful: all tokens, minus dictionary tokens and ignored tokens. This does
-  #           _not_ necessary include `included`. (The client should handle
-  #           `included` itself.)
-  # * nUseful: _total_ number of useful, non-dictionary tokens.
+  # * counts: { String => Number} The top `nTokens` tokens and their counts.
+  #           This can help the client include new tokens without refreshing
+  #           the page.
+  # * useful: [ String ] Non-dictionary tokens, from most to least common.
   snapshot: (nTokens) ->
-    counts = @tokens
-    tokens = @tokensKeys.sort((t1, t2) -> counts[t2] - counts[t1])
+    allCounts = @tokens
+    tokens = @tokensKeys
+      .sort((t1, t2) -> allCounts[t2] - allCounts[t1])
+      .slice(0, nTokens)
 
-    all = {}
-    (all[token] = counts[token]) for token in tokens.slice(0, nTokens)
+    counts = Object.create(null)
+    counts[token] = allCounts[token] for token in tokens
 
-    nUseful = 0
-    usefulTokens = []
+    useful = []
     for token in tokens
-      if @dictionary[token] != true && @ignore[token] != true
-        nUseful += 1
-        if usefulTokens.length < nTokens
-          usefulTokens.push(token)
+      if @dictionary[token] != true
+        useful.push(token)
 
-    useful = {}
-    (useful[token] = counts[token]) for token in usefulTokens
-
-    included = {}
-    (included[token] = counts[token]) for token in @include
-
-    all: all
+    counts: counts
     useful: useful
-    included: included
-    nUseful: nUseful
