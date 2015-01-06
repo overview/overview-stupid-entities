@@ -18,6 +18,21 @@ readDictionary = (lang) ->
 
 Dictionaries =
   en: readDictionary('en')
+  ru: readDictionary('ru')
+
+# Turns "en+ru" into a big dictionary
+combineDictionaries = (spec) ->
+  if spec of Dictionaries
+    Dictionaries[spec]
+  else
+    ret = Object.create(null)
+
+    for lang in spec.split('+')
+      dictionary = Dictionaries[lang]
+      for k, __ of dictionary
+        ret[k] = true
+
+    Dictionaries[spec] = ret
 
 findTokenOffsets = (buffer) -> findTokenOffsets.regex.execAll(buffer)
 findTokenOffsets.regex = new PCRE("[-_’'\\p{L}\\p{N}]+", PCRE.PCRE_UTF8) # FIXME this is English-only
@@ -31,11 +46,11 @@ findTokenOffsets.regex.study(PCRE.PCRE_STUDY_JIT_COMPILE)
 # "snapshot".
 module.exports = class TokenCounter
   constructor: (options) ->
-    throw 'Must pass options.lang, a String' if !options.lang
+    throw 'Must pass options.lang, a String like "en" or "en+ru"' if !options.lang
     throw 'Must pass options.ignore, an Array of Strings' if !options.ignore
     throw 'Must pass options.include, an Array of Strings' if !options.include
 
-    @dictionary = Dictionaries[options.lang]
+    @dictionary = combineDictionaries(options.lang)
 
     # Hint for the uninitiated: we need to use `Object.create(null)` here, not
     # `{}`, so that we don't have a prototype. That's how we can handle the

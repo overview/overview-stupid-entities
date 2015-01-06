@@ -5,7 +5,7 @@ NVisibleTokens = 150
 
 module.exports = class State extends Backbone.Model
   defaults:
-    lang: 'en'
+    lang: 'en+ru'
     ignore: [] # Ignored words (above and beyond dictionary words)
     include: [] # Included words (regardless of ignore/dictionaty)
     missing: [] # Words in "included" which we can't see
