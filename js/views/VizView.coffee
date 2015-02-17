@@ -92,7 +92,7 @@ module.exports = class VizView extends Backbone.View
 
     window.parent.postMessage({
       call: 'setDocumentListParams'
-      args: [ { name: "in document set" } ]
+      args: [ {} ]
     }, @server)
 
   _onClickText: (el) ->
@@ -150,7 +150,7 @@ module.exports = class VizView extends Backbone.View
 
     window.parent.postMessage({
       call: 'setDocumentListParams'
-      args: [ { q: token.text, name: "with word “#{token.text}”" } ]
+      args: [ { q: token.text } ]
     }, @server)
 
   _drawFromLayout: (data) ->
