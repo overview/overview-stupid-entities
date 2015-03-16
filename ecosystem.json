@@ -1,0 +1,20 @@
+{
+  "apps": [
+    {
+      "name": "www",
+      "script": "server.js",
+      "env": { "PORT": "9001" },
+      "env_production": { "NODE_ENV": "production" }
+    }
+  ],
+  "deploy": {
+    "production": {
+      "user": "pm2",
+      "host": "stupid-entities.plugins.overviewproject.org",
+      "ref": "origin/master",
+      "repo": "https://github.com/overview/overview-stupid-entities.git",
+      "path": "/opt/pm2/overview-stupid-entities",
+      "post-deploy" : "npm install && pm2 startOrRestart ecosystem.json --env production"
+    }
+  }
+}
