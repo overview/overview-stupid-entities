@@ -14,7 +14,7 @@
       "ref": "origin/master",
       "repo": "https://github.com/overview/overview-stupid-entities.git",
       "path": "/opt/pm2/overview-stupid-entities",
-      "post-deploy" : "npm install && gulp dist && pm2 startOrRestart ecosystem.json --env production"
+      "post-deploy" : "npm install && node_modules/.bin/gulp dist && pm2 startOrRestart ecosystem.json --env production"
     }
   }
 }
